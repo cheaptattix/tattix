@@ -1,0 +1,3 @@
+fastapi
+uvicorn[standard]  # This includes WebSocket support
+websockets  # Required for WebSockets
