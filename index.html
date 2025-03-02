@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tattix</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+</head>
+<body>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 1280,
+            height: 639,
+            scene: { preload: preload, create: create }
+        };
+        const game = new Phaser.Game(config);
+
+
+
+		// Socket stuff...
+		const socket = new WebSocket("ws://localhost:8000/ws");
+		socket.onmessage = (event) => {
+   			const gameState = JSON.parse(event.data);
+    		console.log("Updated Game State:", gameState);
+		};
+
+
+		// Preload...
+        function preload() {
+            this.load.image('map', 'maps/map_hires.jpeg'); // Load map image
+            this.load.image('cubic', 'maps/territories/cubic.png');
+          	this.load.image('vadvillio', 'maps/territories/vadvillio.png');
+          	this.load.image('caspiar', 'maps/territories/caspiar.png');
+
+        }
+
+
+		// Gamestate
+		let gameState = {
+   			territories: {
+        		"cubic": { owner: null, troops: 0 },
+        		"vadvillio": { owner: null, troops: 0 },
+        		"caspiar": { owner: null, troops: 0 }
+    		},
+    		currentPlayer: "Player 1"
+		};
+
+
+
+
+        function create() {
+    		this.add.image(0, 0, 'map').setOrigin(0, 0); // Align map to top-left
+    		
+    		/* Steps for making a territory image
+    			1. Open map_hires.jpeg in gimp
+    			2. Use magic wand to select the territory desired
+    			3. Layer > transparency > add alpha channel
+    			4. Invert selection (command + I)
+    			5. Edit > clear (delete the background)
+    			6. Image > crop to selection (is that actually necessary?)
+    			7. File > export > rename as .png, checking the save transparency values box
+    	*/
+    		
+    	// cubic
+    	let cubic = this.add.image(0, 0, 'cubic')
+        	.setOrigin(0, 0)
+        	.setInteractive({ pixelPerfect: true }) // Make only non-transparent areas clickable
+        	.setAlpha(0.8); // Optional: Slight transparency to confirm placement
+
+    	//cubic.on('pointerdown', function () {
+        //	console.log("You clicked Cubic!");
+   		// });
+   		cubic.on('pointerdown', () => handleTerritoryClick("cubic"));
+   		 
+		// vadvillio
+    	let vadvillio = this.add.image(0, 0, 'vadvillio')
+        	.setOrigin(0, 0)
+        	.setInteractive({ pixelPerfect: true }) // Make only non-transparent areas clickable
+        	.setAlpha(0.8); // Optional: Slight transparency to confirm placement
+
+    	//vadvillio.on('pointerdown', function () {
+       	// 	console.log("You clicked Vadvillio!");
+   		// });   
+   		vadvillio.on('pointerdown', () => handleTerritoryClick("vadvillio"));
+	
+   		 
+   		// caspiar
+    	let caspiar = this.add.image(0, 0, 'caspiar')
+        	.setOrigin(0, 0)
+        	.setInteractive({ pixelPerfect: true }) // Make only non-transparent areas clickable
+        	.setAlpha(0.8); // Optional: Slight transparency to confirm placement
+
+    	//caspiar.on('pointerdown', function () {
+        //	console.log("You clicked Caspiar!");
+   		//});   		 
+   		caspiar.on('pointerdown', () => handleTerritoryClick("caspiar"));
+
+		}
+
+		
+		//function handleTerritoryClick(territory) {
+		//	if (gameState.territories[territory].owner === null) {
+		//		gameState.territories[territory].owner = gameState.currentPlayer;
+		//		console.log(`${gameState.currentPlayer} now owns ${territory}`);
+		//		switchTurn();
+		//	} else {
+		//		console.log(`${territory} is already owned by ${gameState.territories[territory].owner}`);
+		//	}
+		//}
+
+		function handleTerritoryClick(territory) {
+    		const message = JSON.stringify({ type: "claim_territory", territory });
+    		socket.send(message);
+		}
+		
+
+		function switchTurn() {
+			gameState.currentPlayer = (gameState.currentPlayer === "Player 1") ? "Player 2" : "Player 1";
+			console.log(`Now it's ${gameState.currentPlayer}'s turn`);
+		}
+
+
+
+    </script>
+</body>
+</html>
